@@ -131,6 +131,8 @@
       <file file_name="modules/ex5_obstacle_avoidance.c" />
       <file file_name="modules/ex6_car_following.c" />
       <file file_name="modules/ex7_remote_control.c" />
+      <file file_name="modules/driver_manette.c" />
+      <file file_name="modules/driver_cutebot.c" />
       <file file_name="modules/ex8_tilt_tx.c" />
       <file file_name="modules/ex8_tilt_rx.c" />
     </folder>
