@@ -45,7 +45,7 @@ uint8_t accel_read_reg(uint8_t reg) {
 }
 
 int8_t scale_accel(int16_t raw) {
-    int v = raw / -112;
+    int v = raw / 112;
     if (v < -100) return -100;
     if (v > 100) return 100;
     return (int8_t)v;
