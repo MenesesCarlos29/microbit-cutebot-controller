@@ -27,10 +27,10 @@ void accel_read_xyz(int16_t *x, int16_t *y, int16_t *z);
 // === Radio TX ===
 
 // Configures NRF_RADIO for transmission (BLE LR125Kbit, frequency 14,
-// address 0xAAAAAAAA, 4-byte packet).
+// address 0xAAAAAAAA, 5-byte packet).
 void radio_tx_init(void);
 
-// Sends a packet [header=0, length=2, acc_x, acc_y]. Blocking.
-void radio_tx_send(int8_t acc_x, int8_t acc_y);
+// Sends a packet [header=0, length=3, acc_x, acc_y, buttons]. Blocking.
+void radio_tx_send(int8_t acc_x, int8_t acc_y, int8_t buttons);
 
 #endif

@@ -97,8 +97,8 @@ void accel_read_xyz(int16_t *x, int16_t *y, int16_t *z) {
 // Radio TX (NRF_RADIO)
 // ===========================================================================
 
-// 4-byte payload: [header=0, length=2, acc_x, acc_y]
-static uint8_t pdu[] = { 0x00, 2, 0, 0 };
+// 5-byte payload: [header=0, length=3, acc_x, acc_y, buttons]
+static uint8_t pdu[] = { 0x00, 3, 0, 0, 0 };
 
 void radio_tx_init(void) {
     NRF_CLOCK->TASKS_HFCLKSTART = 1;
@@ -123,9 +123,10 @@ void radio_tx_init(void) {
     NRF_RADIO->SHORTS      = (1U << 0) | (1U << 1);
 }
 
-void radio_tx_send(int8_t acc_x, int8_t acc_y) {
+void radio_tx_send(int8_t acc_x, int8_t acc_y, int8_t buttons) {
     pdu[2] = (uint8_t)acc_x;
     pdu[3] = (uint8_t)acc_y;
+    pdu[4] = (uint8_t)buttons;
 
     NRF_RADIO->EVENTS_DISABLED = 0;
     NRF_RADIO->TASKS_TXEN      = 1;
