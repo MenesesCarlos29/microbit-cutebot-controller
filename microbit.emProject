@@ -130,11 +130,10 @@
       <file file_name="modules/ex4_auto_headlights.c" />
       <file file_name="modules/ex5_obstacle_avoidance.c" />
       <file file_name="modules/ex6_car_following.c" />
-      <file file_name="modules/ex7_remote_control.c" />
-      <file file_name="modules/driver_manette.c" />
-      <file file_name="modules/driver_cutebot.c" />
-      <file file_name="modules/ex8_tilt_tx.c" />
       <file file_name="modules/ex8_tilt_rx.c" />
+      <file file_name="modules/ex8_tilt_tx.c" />
+      <file file_name="modules/driver_cutebot.c" />
+      <file file_name="modules/driver_manette.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
