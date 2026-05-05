@@ -126,12 +126,11 @@
       <file file_name="00std_cutebot_pro.c" />
       <file file_name="main.c" />
       <file file_name="modules/ex2_full_speed.c" />
-      <file file_name="modules/ex3_speed_up.c" />
       <file file_name="modules/ex4_auto_headlights.c" />
       <file file_name="modules/ex5_obstacle_avoidance.c" />
       <file file_name="modules/ex6_car_following.c" />
-      <file file_name="modules/ex7_remote_control.c" />
       <file file_name="modules/ex8_tilt_control.c" />
+      <file file_name="modules/ex7_receiver.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
@@ -612,7 +611,8 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="00std_wireless_tx.c" />
+      <file file_name="ex7_transmitter.c" />
+      <file file_name="main.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
