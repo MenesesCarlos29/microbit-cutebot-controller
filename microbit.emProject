@@ -191,7 +191,13 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="00std_leds_1_center.c" />
+      <file file_name="../accelerometer/accelerometer.c" />
+      <file file_name="../accelerometer/accelerometer.h" />
+      <file file_name="../accelerometer/i2c.c" />
+      <file file_name="../accelerometer/i2c.h" />
+      <file file_name="../accelerometer/led_matrix.c" />
+      <file file_name="../accelerometer/led_matrix.h" />
+      <file file_name="../accelerometer/main.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
