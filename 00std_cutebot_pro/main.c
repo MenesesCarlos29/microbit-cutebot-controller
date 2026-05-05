@@ -9,7 +9,7 @@
 int main(void) {
     //run_full_speed();
     //run_gradual_speed();
-    run_tilt_tx();
-    //run_tilt_rx();
+    //run_tilt_tx();
+    run_tilt_rx();
     while(1);
 }

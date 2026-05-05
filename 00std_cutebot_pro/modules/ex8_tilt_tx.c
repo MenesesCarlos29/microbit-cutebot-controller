@@ -1,8 +1,7 @@
 // ex8_tilt_tx.c
 //
 // Step 2: read the LSM303AGR accelerometer and broadcast (acc_x, acc_y)
-// over the radio. The values are scaled to the [-100, +100] range, the
-// same range used for the Cutebot wheel speeds.
+// over the radio. The values are scaled to the [-100, +100] range.
 //
 // Radio packet (4 bytes total):
 //   pdu[0] = 0       header (S0)
@@ -14,7 +13,6 @@
 //   SCL = P0.08, SDA = P0.16
 
 #include "ex8_tilt_tx.h"
-#include <nrf.h>
 #include <nrf52833.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -101,39 +99,40 @@ static uint8_t accel_read_reg(uint8_t reg) {
 
 
 // ----- Radio TX ------------------------------------------------------------
-// Same configuration as 00std_wireless_tx.c so it stays compatible.
+// Same configuration as 00std_wireless_tx.c so the link is compatible.
+// Values written as literals (the SDK macros are not always picked up
+// by SES's indexer/compiler in this project layout).
 
 static void radio_tx_init(void) {
     NRF_CLOCK->TASKS_HFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
-    NRF_RADIO->MODE        = (RADIO_MODE_MODE_Ble_LR125Kbit << RADIO_MODE_MODE_Pos);
-    NRF_RADIO->TXPOWER     = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);
-    NRF_RADIO->PCNF0       = (8 << RADIO_PCNF0_LFLEN_Pos)   |
-                             (1 << RADIO_PCNF0_S0LEN_Pos)   |
-                             (0 << RADIO_PCNF0_S1LEN_Pos)   |
-                             (2 << RADIO_PCNF0_CILEN_Pos)   |
-                             (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos) |
-                             (3 << RADIO_PCNF0_TERMLEN_Pos);
-    NRF_RADIO->PCNF1       = (sizeof(pdu) << RADIO_PCNF1_MAXLEN_Pos)  |
-                             (0           << RADIO_PCNF1_STATLEN_Pos) |
-                             (3           << RADIO_PCNF1_BALEN_Pos)   |
-                             (RADIO_PCNF1_ENDIAN_Little    << RADIO_PCNF1_ENDIAN_Pos) |
-                             (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);
+    NRF_RADIO->MODE        = 5;             // Ble_LR125Kbit (long range)
+    NRF_RADIO->TXPOWER     = 8;             // +8 dBm
+
+    // PCNF0: LFLEN=8 (bit0), S0LEN=1 (bit8), S1LEN=0 (bit16),
+    //        CILEN=2 (bit22), PLEN=LongRange=3 (bit24), TERMLEN=3 (bit29)
+    NRF_RADIO->PCNF0       = (8U << 0) | (1U << 8) | (0U << 16)
+                           | (2U << 22) | (3U << 24) | (3U << 29);
+
+    // PCNF1: MAXLEN=sizeof(pdu) (bit0), STATLEN=0 (bit8), BALEN=3 (bit16),
+    //        ENDIAN=Little=0 (bit24), WHITEEN=Disabled=0 (bit25)
+    NRF_RADIO->PCNF1       = (sizeof(pdu) << 0) | (3U << 16);
+
     NRF_RADIO->BASE0       = 0xAAAAAAAAUL;
     NRF_RADIO->TXADDRESS   = 0;
-    NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
+    NRF_RADIO->RXADDRESSES = 1;             // ADDR0 enabled
     NRF_RADIO->TIFS        = 1000;
-    NRF_RADIO->CRCCNF      = (RADIO_CRCCNF_LEN_Three      << RADIO_CRCCNF_LEN_Pos) |
-                             (RADIO_CRCCNF_SKIPADDR_Skip  << RADIO_CRCCNF_SKIPADDR_Pos);
+
+    // CRCCNF: LEN=3 bytes (bit0), SKIPADDR=Skip=1 (bit8)
+    NRF_RADIO->CRCCNF      = (3U << 0) | (1U << 8);
     NRF_RADIO->CRCINIT     = 0xFFFFUL;
     NRF_RADIO->CRCPOLY     = 0x00065b;
     NRF_RADIO->FREQUENCY   = 14;
     NRF_RADIO->PACKETPTR   = (uint32_t)pdu;
 
-    // shortcuts: TXEN -> ramp up -> START, then on END -> DISABLE
-    NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |
-                        (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos);
+    // SHORTS: READY_START (bit0) + END_DISABLE (bit1)
+    NRF_RADIO->SHORTS      = (1U << 0) | (1U << 1);
 }
 
 // blocking send: triggers TX and waits until the radio is fully disabled
@@ -152,12 +151,70 @@ static int clamp(int v, int lo, int hi) {
     return v;
 }
 
+// SES's minimal printf doesn't handle %d, so we build the output by hand.
+static void print_str(const char *s) {
+    while (*s) putchar(*s++);
+}
+
+static void print_int(int v) {
+    char buf[8];
+    int  i = 0;
+    if (v < 0) { putchar('-'); v = -v; }
+    if (v == 0) { putchar('0'); return; }
+    while (v > 0) {
+        buf[i++] = '0' + (v % 10);
+        v /= 10;
+    }
+    while (i > 0) putchar(buf[--i]);
+}
+
 // Map raw accelerometer value (~ ±16000 for 1g) to a signed value
-// in [-100, +100]. The negative divisor flips the axis sign so a tilt
-// "forward" becomes positive (matches the MakeCode "/-7" convention).
-// Saturates around ~70% of 1g, like MakeCode does.
+// in [-100, +100]. The chip orientation on this board makes "tilt forward"
+// produce a NEGATIVE raw value, so we use a positive divisor to flip it.
+// Saturates around ~70% of 1g.
 static int8_t scale_accel(int16_t raw) {
-    return (int8_t)clamp((int)raw / -112, -100, 100);
+    return (int8_t)clamp((int)raw / 112, -100, 100);
+}
+
+
+// ----- LED matrix helpers --------------------------------------------------
+// Pins (micro:bit v2): row HIGH, column LOW lights one LED.
+//   ROW1=P0.21  ROW2=P0.22  ROW3=P0.15  ROW4=P0.24  ROW5=P0.19
+//   COL1=P0.28  COL2=P0.11  COL3=P0.31  COL4=P1.05  COL5=P0.30
+
+static void leds_all_off(void) {
+    NRF_P0->PIN_CNF[21] = 0x00000002;
+    NRF_P0->PIN_CNF[22] = 0x00000002;
+    NRF_P0->PIN_CNF[15] = 0x00000002;
+    NRF_P0->PIN_CNF[24] = 0x00000002;
+    NRF_P0->PIN_CNF[19] = 0x00000002;
+    NRF_P0->PIN_CNF[28] = 0x00000002;
+    NRF_P0->PIN_CNF[11] = 0x00000002;
+    NRF_P0->PIN_CNF[31] = 0x00000002;
+    NRF_P1->PIN_CNF[5]  = 0x00000002;
+    NRF_P0->PIN_CNF[30] = 0x00000002;
+}
+
+static void led_on(int row, int col) {
+    leds_all_off();
+
+    int row_pin = (row == 1) ? 21 :
+                  (row == 2) ? 22 :
+                  (row == 3) ? 15 :
+                  (row == 4) ? 24 : 19;
+    NRF_P0->PIN_CNF[row_pin] = 0x00000003;
+    NRF_P0->OUTSET = (1U << row_pin);
+
+    if (col == 4) {
+        NRF_P1->PIN_CNF[5] = 0x00000003;
+        NRF_P1->OUTCLR = (1U << 5);
+    } else {
+        int col_pin = (col == 1) ? 28 :
+                      (col == 2) ? 11 :
+                      (col == 3) ? 31 : 30;
+        NRF_P0->PIN_CNF[col_pin] = 0x00000003;
+        NRF_P0->OUTCLR = (1U << col_pin);
+    }
 }
 
 
@@ -167,7 +224,9 @@ void run_tilt_tx(void) {
     accel_i2c_init();
 
     who_am_i = accel_read_reg(REG_WHO_AM_I);
-    printf("WHO_AM_I = 0x%02x (expected 0x33)\n", who_am_i);
+    print_str("WHO_AM_I = 0x");
+    print_int(who_am_i);
+    print_str(" (expected 51)\n");
     if (who_am_i != 0x33) {
         while (1);
     }
@@ -175,6 +234,8 @@ void run_tilt_tx(void) {
     accel_write_reg(REG_CTRL_REG1, 0x57);  // wake up: 100 Hz, normal, X/Y/Z
 
     radio_tx_init();
+
+    int tx_blink = 0;       // alternates between two LEDs to show TX activity
 
     while (1) {
         uint8_t xl = accel_read_reg(REG_OUT_X_L + 0);
@@ -195,7 +256,16 @@ void run_tilt_tx(void) {
         pdu[3] = (uint8_t)ay;
         radio_send();
 
-        printf("tx: acc_x=%4d  acc_y=%4d\n", ax, ay);
+        // visual proof that we are transmitting: alternate two LEDs
+        tx_blink ^= 1;
+        if (tx_blink) led_on(1, 1);    // top-left
+        else          led_on(5, 5);    // bottom-right
+
+        print_str("tx: acc_x=");
+        print_int(ax);
+        print_str("  acc_y=");
+        print_int(ay);
+        putchar('\n');
 
         for (volatile int i = 0; i < 200000; i++);
     }
