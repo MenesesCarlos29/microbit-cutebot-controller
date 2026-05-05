@@ -129,8 +129,7 @@
       <file file_name="modules/ex4_auto_headlights.c" />
       <file file_name="modules/ex5_obstacle_avoidance.c" />
       <file file_name="modules/ex6_car_following.c" />
-      <file file_name="modules/ex8_tilt_control.c" />
-      <file file_name="modules/ex7_receiver.c" />
+      <file file_name="modules/ex8_receiver.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
@@ -611,8 +610,8 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="ex7_transmitter.c" />
       <file file_name="main.c" />
+      <file file_name="ex8_transmitter.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../common/system/nRF/Source/nrf52833_Vectors.s">
