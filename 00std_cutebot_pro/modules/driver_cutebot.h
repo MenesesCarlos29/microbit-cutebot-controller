@@ -26,6 +26,10 @@ void update_motors(int left, int right);
 // Set both headlight RGB LEDs to the given color. (0,0,0) turns them off.
 void set_headlights(uint8_t r, uint8_t g, uint8_t b);
 
+// Set only the left / only the right headlight (the other is left untouched).
+void set_left_headlight(uint8_t r, uint8_t g, uint8_t b);
+void set_right_headlight(uint8_t r, uint8_t g, uint8_t b);
+
 
 // === Radio RX (NRF_RADIO) ==================================================
 
