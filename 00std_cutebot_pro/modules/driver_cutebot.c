@@ -88,6 +88,8 @@ volatile int8_t   rx_acc_y;
 volatile uint32_t rx_count;
 volatile uint32_t rx_bad_crc;
 
+volatile uint8_t rx_btn = 0;
+
 void radio_rx_init(void) {
     NRF_CLOCK->TASKS_HFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
@@ -123,9 +125,10 @@ void RADIO_IRQHandler(void) {
 
         if (NRF_RADIO->CRCSTATUS != 1) {
             rx_bad_crc++;
-        } else if (pdu[1] == 2) {
+        } else if (pdu[1] == 3) {
             rx_acc_x = (int8_t)pdu[2];
             rx_acc_y = (int8_t)pdu[3];
+            rx_btn = pdu[4];
             rx_count++;
         }
     }

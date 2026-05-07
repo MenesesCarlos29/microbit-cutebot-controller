@@ -41,6 +41,7 @@ extern volatile int8_t   rx_acc_y;
 extern volatile uint32_t rx_count;     // increments on each valid packet
 extern volatile uint32_t rx_bad_crc;   // increments on each CRC failure
 
+extern volatile uint8_t rx_btn;
 
 // === Ultrasonic sensor (HC-SR04 + TIMER0) ==================================
 

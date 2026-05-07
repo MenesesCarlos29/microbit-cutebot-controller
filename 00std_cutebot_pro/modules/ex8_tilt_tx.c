@@ -9,6 +9,8 @@
 #include "driver_manette.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <nrf.h>
+#include "nrf52833.h"
 
 
 // ----- helpers (only used by this application) -----------------------------
@@ -49,6 +51,11 @@ static int8_t scale_accel(int16_t raw) {
 void run_tilt_tx(void) {
     accel_init();
 
+    #define PIN_BTN_A 14
+    #define PIN_BTN_B 23
+    NRF_P0->PIN_CNF[PIN_BTN_A] = (3 << 2); 
+    NRF_P0->PIN_CNF[PIN_BTN_B] = (3 << 2);
+
     uint8_t id = accel_who_am_i();
     print_str("WHO_AM_I = 0x");
     print_int(id);
@@ -60,13 +67,21 @@ void run_tilt_tx(void) {
     radio_tx_init();
 
     while (1) {
+
+        uint8_t current_btn = 0;
+        if ((NRF_P0->IN & (1 << PIN_BTN_A)) == 0) {
+            current_btn = 1;
+        } else if ((NRF_P0->IN & (1 << PIN_BTN_B)) == 0) {
+            current_btn = 2;
+        }
+
         int16_t rx, ry, rz;
         accel_read_xyz(&rx, &ry, &rz);
 
         int8_t ax = scale_accel(rx);
         int8_t ay = scale_accel(ry);
 
-        radio_tx_send(ax, ay);
+        radio_tx_send(ax, ay, current_btn);
 
         print_str("tx: acc_x=");
         print_int(ax);
