@@ -64,6 +64,18 @@ void set_headlights(uint8_t r, uint8_t g, uint8_t b) {
     cutebot_i2c_send(buf, sizeof(buf));
 }
 
+// Same swap convention as the motors: 0x02 -> left, 0x01 -> right.
+// (Flip if your headlights end up on the wrong side.)
+void set_left_headlight(uint8_t r, uint8_t g, uint8_t b) {
+    uint8_t buf[7] = { 0x99, 0x0f, 0x02, r, g, b, 0x88 };
+    cutebot_i2c_send(buf, sizeof(buf));
+}
+
+void set_right_headlight(uint8_t r, uint8_t g, uint8_t b) {
+    uint8_t buf[7] = { 0x99, 0x0f, 0x01, r, g, b, 0x88 };
+    cutebot_i2c_send(buf, sizeof(buf));
+}
+
 
 // ===========================================================================
 // Radio RX (NRF_RADIO)
