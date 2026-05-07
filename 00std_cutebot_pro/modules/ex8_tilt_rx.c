@@ -222,11 +222,11 @@ void run_tilt_rx(void) {
                     int dist = ultrasonic_distance_cm();
                     if (dist < OBSTACLE_CM) {
                         // enter evade mode
+                        mode = MODE_EVADE;
                         update_motors(EVADE_SPEED, EVADE_SPEED);
                         set_headlights(0xFF, 0xFF, 0xFF);
                         beep(1000, 200);
                         led_on(5, 3);
-                        evading = 1;
                         evade_start_us = now_us();
                         print_str("rx: obstacle! backing up\n");
                     } else {
@@ -236,7 +236,8 @@ void run_tilt_rx(void) {
                         rx_blink ^= 1;
                         if (rx_blink) led_on(3, 3);
                         else          led_on(5, 5);
-                    }   
+                    }
+                }
             }
 
             if (rx_bad_crc != last_bad) {
@@ -244,7 +245,9 @@ void run_tilt_rx(void) {
                 print_str("rx: bad CRC\n");
             }
 
-            __WFE();
+            if (mode == MODE_NORMAL) {
+                __WFE();
+            }
         }
         else if (mode == MODE_EVADE) {
             int dist = ultrasonic_distance_cm();
@@ -262,9 +265,8 @@ void run_tilt_rx(void) {
             }
             for (volatile int i = 0; i < 50000; i++);
             continue;
-        }          
-
-            for (volatile int i = 0; i < 50000; i++);
         }
+
+        for (volatile int i = 0; i < 50000; i++);
     }
 }
