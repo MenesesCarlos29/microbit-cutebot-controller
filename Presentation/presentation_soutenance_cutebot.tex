@@ -1,0 +1,246 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{ragged2e}
+
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+\definecolor{Primary}{RGB}{19,138,131}
+\definecolor{Accent}{RGB}{231,111,81}
+\definecolor{Dark}{RGB}{34,40,49}
+\definecolor{Soft}{RGB}{245,247,250}
+\definecolor{Muted}{RGB}{108,117,125}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=Dark,bg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{frametitle}{fg=Dark,bg=Soft}
+\setbeamercolor{structure}{fg=Primary}
+\setbeamercolor{block title}{fg=white,bg=Primary}
+\setbeamercolor{block body}{fg=Dark,bg=Soft}
+\setbeamercolor{alerted text}{fg=Accent}
+\setbeamerfont{title}{series=\bfseries,size=\Large}
+\setbeamerfont{frametitle}{series=\bfseries,size=\large}
+
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.78\paperwidth,ht=2.8ex,dp=1.2ex,leftskip=1em]{author in head/foot}%
+      \color{Muted}\footnotesize micro:bit Cutebot Pro 
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.22\paperwidth,ht=2.8ex,dp=1.2ex,rightskip=1em plus1fil]{date in head/foot}%
+      \color{Muted}\footnotesize \insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}%
+  }%
+}
+
+\title{micro:bit Cutebot Pro - Tilt-controlled robot in C}
+\author{Paul-henri DJOKO \\ Franck ulrich KENFACK \\ Carlos MENESES}
+\institute{ENSTA -- IoT}
+\date{2026}
+
+\begin{document}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[Primary] (current page.north west) rectangle ([yshift=-2.8cm]current page.north east);
+    \fill[Accent] ([xshift=-2.2cm,yshift=0.6cm]current page.south east) circle (1.7cm);
+    \fill[Primary!15] ([xshift=1.2cm,yshift=0.9cm]current page.south west) circle (1.1cm);
+  \end{tikzpicture}
+
+  \vspace{0.9cm}
+  {\usebeamerfont{title}\color{white}\inserttitle\par}
+  \vspace{0.2cm}
+  {\large\color{white!90}\insertsubtitle\par}
+
+  \vspace{1.8cm}
+  \begin{beamercolorbox}[rounded=true,shadow=false,wd=\textwidth,sep=1.1em]{block body}
+    \textbf{Id\'ee centrale :} piloter un robot via une micro:bit de mani\`ere intuitive, interactive et s\'ecuris\'ee, en s'appuyant sur une architecture C lisible.
+  \end{beamercolorbox}
+
+  \vfill
+  {\small \insertauthor \hfill \insertinstitute}
+\end{frame}
+}
+
+\begin{frame}{Probl\'ematique}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.55\textwidth}
+    \begin{block}{Question de d\'epart}
+      Comment contr\^oler un robot mobile \textbf{sans fil}, de fa\c{c}on
+      \textbf{simple}, \textbf{r\'eactive} et \textbf{s\^ure}, avec deux
+      micro:bit v2 et sans utiliser MakeCode ?
+    \end{block}
+
+    \begin{block}{Objectifs}
+      \begin{itemize}
+        \item utiliser l'inclinaison comme interface naturelle;
+        \item transmettre les commandes par radio en temps r\'eel;
+        \item prot\'eger le robot face aux obstacles;
+        \item structurer le code pour faciliter les tests et l'\'evolution.
+      \end{itemize}
+    \end{block}
+
+    \column{0.4\textwidth}
+    \begin{alertblock}{Contraintes}
+      \begin{itemize}
+        \item programmation bas niveau en C;
+        \item calibration de l'acc\'el\'erom\`etre;
+        \item coordination de plusieurs p\'eriph\'eriques;
+        \item m\^eme projet SES pour les deux cartes.
+      \end{itemize}
+    \end{alertblock}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Pr\'esentation du projet}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.48\textwidth}
+    \begin{block}{Partie manette}
+      \begin{itemize}
+        \item lecture de l'acc\'el\'erom\`etre LSM303AGR;
+        \item conversion des valeurs brutes vers l'intervalle `[-100,100]';
+        \item lecture des boutons A et B;
+        \item envoi des donn\'ees par \texttt{NRF\_RADIO}.
+      \end{itemize}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{Partie robot}
+      \begin{itemize}
+        \item r\'eception radio et d\'ecodage du paquet;
+        \item commande diff\'erentielle des moteurs du Cutebot Pro;
+        \item gestion des phares, du haut-parleur et des LEDs;
+        \item mesure de distance par capteur ultrason.
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \vspace{0.4cm}
+  \begin{beamercolorbox}[rounded=true,wd=\textwidth,sep=0.8em]{block body}
+    \textbf{Organisation logicielle :} un seul projet Segger Embedded Studio,
+    avec \texttt{main.c} qui s\'electionne \texttt{run\_tilt\_tx()} ou
+    \texttt{run\_tilt\_rx()} selon la carte flash\'ee.
+  \end{beamercolorbox}
+\end{frame}
+
+\begin{frame}{Architecture et fonctionnement}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.6\textwidth}
+    \begin{tikzpicture}[
+      node distance=0.55cm and 0.55cm,
+      box/.style={draw=Primary, rounded corners=3pt, fill=Soft, minimum width=3.0cm, minimum height=0.85cm, align=center},
+      arr/.style={-{Latex[length=2.4mm]}, thick, draw=Primary}
+    ]
+      \node[box] (acc) {Acc\'el\'erom\`etre\\+ boutons};
+      \node[box, below=of acc] (tx) {Mise \`a l'\'echelle\\et paquet radio};
+      \node[box, below=of tx] (rx) {R\'eception\\sur le robot};
+      \node[box, below left=0.7cm and 0.4cm of rx] (drive) {Calcul des vitesses\\gauche / droite};
+      \node[box, below right=0.7cm and 0.4cm of rx] (safe) {V\'erification\\des obstacles};
+      \node[box, below=1.1cm of rx] (act) {Moteurs + \\ phares + son};
+
+      \draw[arr] (acc) -- (tx);
+      \draw[arr] (tx) -- node[right, font=\scriptsize]{BLE LR} (rx);
+      \draw[arr] (rx) -- (drive);
+      \draw[arr] (rx) -- (safe);
+      \draw[arr] (drive) -- (act);
+      \draw[arr] (safe) -- (act);
+    \end{tikzpicture}
+
+    \column{0.36\textwidth}
+    \begin{block}{Principe de commande}
+      \begin{itemize}
+        \item \texttt{ax} pilote la direction;
+        \item \texttt{ay} pilote l'avance / recul;
+        \item le robot calcule les deux vitesses roues:
+      \end{itemize}
+      \vspace{0.2cm}
+      \centering
+      \texttt{left = (ay - ax) / 2}\\
+      \texttt{right = (ay + ax) / 2}
+    \end{block}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Fonctionnalit\'es principales}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.48\textwidth}
+    \begin{block}{Commande et interaction}
+      \begin{itemize}
+        \item pilotage par inclinaison;
+        \item transmission radio des axes et des boutons;
+        \item deux modes de stunt lanc\'es par A et B;
+        \item retour visuel sur la matrice LED.
+      \end{itemize}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{S\'ecurit\'e et retour utilisateur}
+      \begin{itemize}
+        \item \'evitement d'obstacle sous 30 cm;
+        \item sortie d'\'evitement \`a 45 cm ou apr\`es timeout;
+        \item bip p\'eriodique en marche arri\`ere.
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \vspace{0.4cm}
+  \begin{alertblock}{Valeur ajout\'ee}
+    Le projet ne se limite pas \`a d\'eplacer le robot : il int\`egre aussi
+    la s\'ecurit\'e, les effets lumineux et sonores, et une machine \`a \'etats bien structur\'ee, assurant le bon fonctionnement de l'ensemble.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Difficult\'es rencontr\'ees}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.49\textwidth}
+    \begin{block}{Difficult\'es techniques}
+      \begin{itemize}
+        \item comprendre et piloter plusieurs p\'eriph\'eriques en bas niveau;
+        \item calibrer les axes pour obtenir un contr\^ole naturel;
+        \item synchroniser radio, moteur, ultrason et retours utilisateur;
+        \item g\'erer les erreurs de transmission et les cas de blocage.
+      \end{itemize}
+    \end{block}
+
+    \column{0.49\textwidth}
+    \begin{block}{R\'eponses apport\'ees}
+      \begin{itemize}
+        \item s\'eparation claire entre drivers et logique applicative;
+        \item limitation des vitesses avec \texttt{clamp} et zone morte;
+        \item machine d'\'etats pour les modes normal, \'evitement et stunt;
+        \item temporisations et timeouts pour garder un comportement stable.
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \vspace{0.35cm}
+\end{frame}
+
+\begin{frame}{Bilan et perspectives}
+  \begin{block}{Bilan}
+    \begin{itemize}
+      \item objectif principal atteint : le robot est contr\^ol\'e par inclinaison;
+      \item la communication radio transmet mouvement et actions boutons;
+      \item le syst\`eme r\'eagit aux obstacles;
+      \item le code final est modulaire.
+    \end{itemize}
+  \end{block}
+
+
+
+  \vspace{0.25cm}
+  \centering
+  \textbf{Conclusion :} le projet montre qu'un syst\`eme simple fonctionne tr\`es bien si l'on combine correctement contr\^ole, s\'ecurit\'e et code lisible.
+\end{frame}
+
+\end{document}
